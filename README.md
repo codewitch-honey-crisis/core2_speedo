@@ -17,3 +17,5 @@ Tap the middle virtual button to switch to the stat/location screen and back
 Tap the right virtual button to reset the trip/time counters
 
 Tap the screen itself (on the main screen) to switch between full and big modes.
+
+Sats line on status screen is satellites in use vs in view
