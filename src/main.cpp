@@ -89,11 +89,9 @@ static void update_timer(time_t time) {
     snprintf(timer_buffer,sizeof(timer_buffer),"%02d:%02d:%02d",hrs,mns,scs);
 }
 static void button_a_on_press() {
-    puts("button a");
     toggle_units();
 }
 static void button_b_on_press() {
-    puts("button b");
     if(++current_screen>1) {
         current_screen = 0;
     }
@@ -113,7 +111,6 @@ static void button_b_on_press() {
     
 }
 static void button_c_on_press() {
-    puts("button c");
     trip_counter_miles = 0;
     trip_counter_kilos = 0;
     timer_counter = 0;

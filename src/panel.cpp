@@ -6,13 +6,7 @@
 #include <esp_lcd_panel_ops.h>
 #include <esp_lcd_panel_vendor.h>
 #include <esp_lcd_panel_ili9342.h>
-#include <esp_i2c.hpp>
-#include <ft6336.hpp>
-#ifdef ARDUINO
-using namespace arduino;
-#else
-using namespace esp_idf;
-#endif
+
 using namespace uix;
 
 // handle to the display
@@ -22,14 +16,7 @@ uint8_t* panel_transfer_buffer1 = nullptr;
 uint8_t* panel_transfer_buffer2 = nullptr;
 // the currently active screen
 static screen_t* panel_active_screen = nullptr;
-// for the touch panel
-#ifdef M5STACK_CORE2
-using touch_t = ft6336<320,280>;
-#endif
-#ifdef M5STACK_TOUGH
-using touch_t = chsc6540<320,240,39>;
-#endif
-static touch_t touch(esp_i2c<1,21,22>::instance);
+
 
 // tell UIX the DMA transfer is complete
 static bool panel_flush_ready(esp_lcd_panel_io_handle_t panel_io, 
@@ -46,44 +33,18 @@ static void panel_on_flush(const rect16& bounds, const void* bmp, void* state) {
     esp_lcd_panel_draw_bitmap(lcd_handle, x1, y1, x2, y2, (void*)bmp);
 }
 
-// for the touch panel
-static void panel_on_touch(point16* out_locations,
-                            size_t* in_out_locations_size,
-                            void* state) {
-    // UIX supports multiple touch points. 
-    // so does the FT6336 so we potentially have
-    // two values
-    *in_out_locations_size = 0;
-    uint16_t x,y;
-    if(touch.xy(&x,&y)) {
-        out_locations[0]=point16(x,y);
-        ++*in_out_locations_size;
-        if(touch.xy2(&x,&y)) {
-            out_locations[1]=point16(x,y);
-            ++*in_out_locations_size;
-        }
-    }
-}
 
 void panel_set_active_screen(screen_t& new_screen) {
     if(panel_active_screen!=nullptr) {
         panel_active_screen->on_flush_callback(nullptr);
-        panel_active_screen->on_touch_callback(nullptr);
     }
     panel_active_screen=&new_screen;
     new_screen.on_flush_callback(panel_on_flush);
-    new_screen.on_touch_callback(panel_on_touch);
     panel_active_screen->invalidate();
 }
 void panel_update() {
     if(panel_active_screen!=nullptr) {
         panel_active_screen->update();    
-    }
-    // FT6336 chokes if called too quickly
-    static uint32_t touch_ts = 0;
-    if(pdTICKS_TO_MS(xTaskGetTickCount())>touch_ts+13) {
-        touch_ts = pdTICKS_TO_MS(xTaskGetTickCount());
-        touch.update();
     }
 }
 
@@ -152,6 +113,5 @@ void panel_init() {
 #else
     esp_lcd_panel_disp_off(lcd_handle, true);
 #endif
-    touch.initialize();
-    touch.rotation(0);
+ 
 }
