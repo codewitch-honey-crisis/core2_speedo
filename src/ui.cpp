@@ -115,7 +115,6 @@ void ui_init() {
     clock_label.padding({5,0});
     clock_label.text("12:00 am");
     speed_screen.register_control(clock_label);
-
     const int16_t timer_height = clock_height;
     timer_label.bounds(srect16(0,0,159,clock_height-1));
     timer_label.background_color(transparent);
@@ -126,7 +125,6 @@ void ui_init() {
     timer_label.padding({5,0});
     timer_label.text("00:00:00");
     speed_screen.register_control(timer_label);
-
     const int16_t trip_height = 240-speed_needle.bounds().y2-2+10;
     const int16_t trip_unit_height = trip_height;
     const size_t trip_unit_width = text_font.measure_text(
@@ -163,7 +161,6 @@ void ui_init() {
     big_battery_canvas.bounds(((srect16)faBatteryEmpty_size.bounds()).offset(big_screen.dimensions().width-faBatteryEmpty_size.width-1,0));
     big_battery_canvas.on_paint_callback(ui_battery_icon_paint);
     big_screen.register_control(big_battery_canvas);
-
     srect16 big_unit_rect(0,0,speed_unit_width-1,speed_unit_height-1);
     big_unit_rect.offset_inplace(big_screen.dimensions().width-2-speed_unit_width,(big_screen.dimensions().height-speed_unit_height)/2);
     big_units_label.bounds(big_unit_rect);
@@ -238,6 +235,5 @@ void ui_init() {
     loc_alt_label.text_color(color32_t::aqua);
     loc_alt_label.text("alt: --");
     stat_screen.register_control(loc_alt_label);
-
 
 }
