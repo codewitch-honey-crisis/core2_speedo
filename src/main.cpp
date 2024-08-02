@@ -281,11 +281,8 @@ void loop()
     }
     panel_update();
     // process "buttons"
-    static uint32_t touch_ts = 0;
-    if(millis()>touch_ts+15) {
-        touch_ts = millis();
-        touch.update();
-    }
+    touch.update();
+    
     uint16_t tx,ty;
     static int old_button=-1;
     int button = -1;

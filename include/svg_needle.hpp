@@ -78,11 +78,22 @@ class svg_needle : public uix::control<ControlSurfaceType> {
         do_copy_control(rhs);
         return *this;
     }
-    /// @brief Constructs a new instance of a clock
+    /// @brief Constructs a new instance of a needle
     /// @param parent The parent (a screen)
     /// @param palette The palette, if applicable
     svg_needle(uix::invalidation_tracker& parent, const palette_type* palette = nullptr)
         : base_type(parent, palette), m_angle(0), m_dirty(true) {
+        static const constexpr gfx::rgba_pixel<32> white(0xFF, 0xFF, 0xFF, 0xFF);
+        static const constexpr gfx::rgba_pixel<32> black(0x0, 0x0, 0x0, 0xFF);
+        static const constexpr gfx::rgba_pixel<32> gray(0x7F, 0x7F, 0x7F, 0xFF);
+        static const constexpr gfx::rgba_pixel<32> red(0xFF, 0x0, 0x0, 0xFF);
+        m_needle_color = red;
+        m_needle_border_color = red;
+        m_needle_border_width = 1;
+    }
+    /// @brief Constructs a new instance of a needle
+    svg_needle()
+        : base_type(), m_angle(0), m_dirty(true) {
         static const constexpr gfx::rgba_pixel<32> white(0xFF, 0xFF, 0xFF, 0xFF);
         static const constexpr gfx::rgba_pixel<32> black(0x0, 0x0, 0x0, 0xFF);
         static const constexpr gfx::rgba_pixel<32> gray(0x7F, 0x7F, 0x7F, 0xFF);

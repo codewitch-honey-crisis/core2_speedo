@@ -15,26 +15,26 @@ using namespace uix;
 
 // the screen/control declarations
 screen_t speed_screen;
-needle_t speed_needle(speed_screen);
-label_t speed_label(speed_screen);
-label_t speed_units_label(speed_screen);
-label_t timer_label(speed_screen);
-label_t clock_label(speed_screen);
-label_t trip_label(speed_screen);
-label_t trip_units_label(speed_screen);
-canvas_t speed_battery_canvas(speed_screen);
+needle_t speed_needle;
+label_t speed_label;
+label_t speed_units_label;
+label_t timer_label;
+label_t clock_label;
+label_t trip_label;
+label_t trip_units_label;
+canvas_t speed_battery_canvas;
 
 screen_t big_screen;
-label_t big_label(big_screen);
-label_t big_units_label(big_screen);
-canvas_t big_battery_canvas(big_screen);
+label_t big_label;
+label_t big_units_label;
+canvas_t big_battery_canvas;
 
 screen_t stat_screen;
-label_t loc_lat_label(stat_screen);
-label_t loc_lon_label(stat_screen);
-label_t loc_alt_label(stat_screen);
-label_t stat_sat_label(stat_screen);
-canvas_t stat_battery_canvas(stat_screen);
+label_t loc_lat_label;
+label_t loc_lon_label;
+label_t loc_alt_label;
+label_t stat_sat_label;
+canvas_t stat_battery_canvas;
 
 int ui_battery_level = 0;
 bool ui_ac_in = false;
