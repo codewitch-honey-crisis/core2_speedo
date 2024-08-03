@@ -280,9 +280,9 @@ void loop()
         ac_in = ui_ac_in;
     }
     panel_update();
-    // process "buttons"
-    touch.update();
     
+    // process "buttons"
+    touch.update();  
     uint16_t tx,ty;
     static int old_button=-1;
     int button = -1;

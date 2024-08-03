@@ -59,7 +59,6 @@ static void ui_battery_icon_paint(surface_t& destination,
    }
 }
 void ui_init() {
-    rgba_pixel<32> transparent(0,0,0,0);
     speed_screen.dimensions({320,240});
     speed_screen.buffer_size(panel_transfer_buffer_size);
     speed_screen.buffer1(panel_transfer_buffer1);
@@ -82,8 +81,8 @@ void ui_init() {
     speed_label.text_open_font(&text_font);
     speed_label.padding({5,0});
     speed_label.text_line_height(speed_height);
-    speed_label.background_color(transparent);
-    speed_label.border_color(transparent);
+    speed_label.background_color(color32_t::transparent);
+    speed_label.border_color(color32_t::transparent);
     speed_label.text_color(color32_t::white);
     speed_label.text("--");
     speed_screen.register_control(speed_label);
@@ -99,16 +98,16 @@ void ui_init() {
     speed_units_label.text_open_font(&text_font);
     speed_units_label.text_line_height(speed_unit_height);
     speed_units_label.text_justify(uix_justify::top_right);
-    speed_units_label.border_color(transparent);
-    speed_units_label.background_color(transparent);
+    speed_units_label.border_color(color32_t::transparent);
+    speed_units_label.background_color(color32_t::transparent);
     speed_units_label.text_color(color32_t::white);
     speed_units_label.padding({0,0});
     speed_units_label.text("---");
     speed_screen.register_control(speed_units_label);
     const int16_t clock_height = 240-speed_needle.bounds().y2-2+10;
     clock_label.bounds(srect16(0,speed_needle.bounds().y2-40,159,speed_screen.bounds().y2));
-    clock_label.background_color(transparent);
-    clock_label.border_color(transparent);
+    clock_label.background_color(color32_t::transparent);
+    clock_label.border_color(color32_t::transparent);
     clock_label.text_color(color32_t::yellow);
     clock_label.text_open_font(&text_font);
     clock_label.text_line_height(clock_height);
@@ -117,8 +116,8 @@ void ui_init() {
     speed_screen.register_control(clock_label);
     const int16_t timer_height = clock_height;
     timer_label.bounds(srect16(0,0,159,clock_height-1));
-    timer_label.background_color(transparent);
-    timer_label.border_color(transparent);
+    timer_label.background_color(color32_t::transparent);
+    timer_label.border_color(color32_t::transparent);
     timer_label.text_color(color32_t::aquamarine);
     timer_label.text_open_font(&text_font);
     timer_label.text_line_height(timer_height);
@@ -137,8 +136,8 @@ void ui_init() {
     trip_label.text_line_height(trip_height);
     trip_label.text_justify(uix_justify::top_right);
     trip_label.text("----.--");
-    trip_label.background_color(transparent);
-    trip_label.border_color(transparent);
+    trip_label.background_color(color32_t::transparent);
+    trip_label.border_color(color32_t::transparent);
     trip_label.text_color(color32_t::orange);
     trip_label.padding({0,0});
     speed_screen.register_control(trip_label);
@@ -148,8 +147,8 @@ void ui_init() {
     trip_units_label.text_open_font(&text_font);
     trip_units_label.text_line_height(speed_unit_height);
     trip_units_label.text_justify(uix_justify::top_right);
-    trip_units_label.border_color(transparent);
-    trip_units_label.background_color(transparent);
+    trip_units_label.border_color(color32_t::transparent);
+    trip_units_label.background_color(color32_t::transparent);
     trip_units_label.text_color(color32_t::white);
     trip_units_label.text("---");
     speed_screen.register_control(trip_units_label);
@@ -167,8 +166,8 @@ void ui_init() {
     big_units_label.text_open_font(&text_font);
     big_units_label.text_line_height(speed_unit_height);
     big_units_label.text_justify(uix_justify::top_right);
-    big_units_label.border_color(transparent);
-    big_units_label.background_color(transparent);
+    big_units_label.border_color(color32_t::transparent);
+    big_units_label.background_color(color32_t::transparent);
     big_units_label.text_color(color32_t::white);
     big_units_label.padding({0,0});
     big_units_label.text("---");
@@ -180,8 +179,8 @@ void ui_init() {
     big_label.text_open_font(&text_font);
     big_label.padding({20,0});
     big_label.text_line_height(big_label.dimensions().height-2);
-    big_label.background_color(transparent);
-    big_label.border_color(transparent);
+    big_label.background_color(color32_t::transparent);
+    big_label.border_color(color32_t::transparent);
     big_label.text_color(color32_t::white);
     big_label.text("--");
     big_screen.register_control(big_label);
@@ -200,8 +199,8 @@ void ui_init() {
     stat_sat_label.text_justify(uix_justify::center);
     stat_sat_label.text_line_height(stat_height);
     stat_sat_label.padding({10,0});
-    stat_sat_label.background_color(transparent);
-    stat_sat_label.border_color(transparent);
+    stat_sat_label.background_color(color32_t::transparent);
+    stat_sat_label.border_color(color32_t::transparent);
     stat_sat_label.text_color(color32_t::light_blue);
     stat_sat_label.text("-/- sats");
     stat_screen.register_control(stat_sat_label);
@@ -210,8 +209,8 @@ void ui_init() {
     loc_lat_label.text_open_font(&text_font);
     loc_lat_label.text_line_height(stat_height);
     loc_lat_label.padding({10,0});
-    loc_lat_label.border_color(transparent);
-    loc_lat_label.background_color(transparent);
+    loc_lat_label.border_color(color32_t::transparent);
+    loc_lat_label.background_color(color32_t::transparent);
     loc_lat_label.text_color(color32_t::aqua);
     loc_lat_label.text("lat: --");
     stat_screen.register_control(loc_lat_label);
@@ -220,8 +219,8 @@ void ui_init() {
     loc_lon_label.text_open_font(&text_font);
     loc_lon_label.text_line_height(stat_height);
     loc_lon_label.padding({10,0});
-    loc_lon_label.border_color(transparent);
-    loc_lon_label.background_color(transparent);
+    loc_lon_label.border_color(color32_t::transparent);
+    loc_lon_label.background_color(color32_t::transparent);
     loc_lon_label.text_color(color32_t::aqua);
     loc_lon_label.text("lon: --");
     stat_screen.register_control(loc_lon_label);
@@ -230,8 +229,8 @@ void ui_init() {
     loc_alt_label.text_open_font(&text_font);
     loc_alt_label.text_line_height(stat_height);
     loc_alt_label.padding({10,0});
-    loc_alt_label.border_color(transparent);
-    loc_alt_label.background_color(transparent);
+    loc_alt_label.border_color(color32_t::transparent);
+    loc_alt_label.background_color(color32_t::transparent);
     loc_alt_label.text_color(color32_t::aqua);
     loc_alt_label.text("alt: --");
     stat_screen.register_control(loc_alt_label);
