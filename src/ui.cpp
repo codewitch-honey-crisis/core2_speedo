@@ -1,4 +1,3 @@
-#include "panel.hpp"
 #include "ui.hpp"
 // font is a TTF/OTF from downloaded from fontsquirrel.com
 // converted to a header with https://honeythecodewitch.com/gfx/converter
@@ -60,9 +59,6 @@ static void ui_battery_icon_paint(surface_t& destination,
 }
 void ui_init() {
     speed_screen.dimensions({320,240});
-    speed_screen.buffer_size(panel_transfer_buffer_size);
-    speed_screen.buffer1(panel_transfer_buffer1);
-    speed_screen.buffer2(panel_transfer_buffer2);
     speed_battery_canvas.bounds(((srect16)faBatteryEmpty_size.bounds()).offset(speed_screen.dimensions().width-faBatteryEmpty_size.width-1,0));
     speed_battery_canvas.on_paint_callback(ui_battery_icon_paint);
     speed_screen.register_control(speed_battery_canvas);
@@ -154,9 +150,6 @@ void ui_init() {
     speed_screen.register_control(trip_units_label);
 
     big_screen.dimensions({320,240});
-    big_screen.buffer_size(panel_transfer_buffer_size);
-    big_screen.buffer1(panel_transfer_buffer1);
-    big_screen.buffer2(panel_transfer_buffer2);
     big_battery_canvas.bounds(((srect16)faBatteryEmpty_size.bounds()).offset(big_screen.dimensions().width-faBatteryEmpty_size.width-1,0));
     big_battery_canvas.on_paint_callback(ui_battery_icon_paint);
     big_screen.register_control(big_battery_canvas);
@@ -186,9 +179,6 @@ void ui_init() {
     big_screen.register_control(big_label);
     
     stat_screen.dimensions({320,240});
-    stat_screen.buffer_size(panel_transfer_buffer_size);
-    stat_screen.buffer1(panel_transfer_buffer1);
-    stat_screen.buffer2(panel_transfer_buffer2);
     stat_battery_canvas.bounds(((srect16)faBatteryEmpty_size.bounds()).offset(stat_screen.dimensions().width-faBatteryEmpty_size.width-1,0));
     stat_battery_canvas.on_paint_callback(ui_battery_icon_paint);
     stat_screen.register_control(stat_battery_canvas);

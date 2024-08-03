@@ -1,5 +1,11 @@
 #define MAX_SPEED 40
 #include <Arduino.h>
+#include <driver/gpio.h>
+#include <driver/spi_master.h>
+#include <esp_lcd_panel_io.h>
+#include <esp_lcd_panel_ops.h>
+#include <esp_lcd_panel_vendor.h>
+#include <esp_lcd_panel_ili9342.h>
 #include <esp_i2c.hpp> // i2c initialization
 #include <m5core2_power.hpp> // AXP192 power management (core2)
 #include <bm8563.hpp> // real-time clock
@@ -7,7 +13,6 @@
 #include <uix.hpp> // user interface library
 #include <gfx.hpp> // graphics library
 #include "ui.hpp" // ui declarations
-#include "panel.hpp" // display panel functionality
 #include "lwgps.h"
 // namespace imports
 using namespace arduino; // libs (arduino)
@@ -24,6 +29,101 @@ static bm8563 time_rtc(esp_i2c<1,21,22>::instance);
 // for touch
 ft6336<320,280,32> touch(esp_i2c<1,21,22>::instance);
 
+// use two 32KB buffers (DMA)
+constexpr const size_t lcd_transfer_buffer_size = 32*1024;
+static uint8_t* lcd_transfer_buffer1;
+static uint8_t* lcd_transfer_buffer2;
+
+// handle to the display
+static esp_lcd_panel_handle_t lcd_handle;
+
+using display_t = uix::display;
+static display_t lcd;
+
+// tell UIX the DMA transfer is complete
+static bool display_flush_ready(esp_lcd_panel_io_handle_t panel_io, 
+                                esp_lcd_panel_io_event_data_t* edata, 
+                                void* user_ctx) {
+    lcd.flush_complete();
+    return true;
+}
+// tell the lcd panel api to transfer data via DMA
+static void display_on_flush(const rect16& bounds, const void* bmp, void* state) {
+    int x1 = bounds.x1, y1 = bounds.y1, x2 = bounds.x2 + 1, y2 = bounds.y2 + 1;
+    esp_lcd_panel_draw_bitmap(lcd_handle, x1, y1, x2, y2, (void*)bmp);
+}
+
+
+// initialize the screen using the esp panel API
+void display_init() {
+    lcd_transfer_buffer1 = (uint8_t*)heap_caps_malloc(lcd_transfer_buffer_size,MALLOC_CAP_DMA);
+    lcd_transfer_buffer2 = (uint8_t*)heap_caps_malloc(lcd_transfer_buffer_size,MALLOC_CAP_DMA);
+    if(lcd_transfer_buffer1==nullptr||lcd_transfer_buffer2==nullptr) {
+        puts("Out of memory allocating transfer buffers");
+        while(1) vTaskDelay(5);
+    }
+    spi_bus_config_t buscfg;
+    memset(&buscfg, 0, sizeof(buscfg));
+    buscfg.sclk_io_num = 18;
+    buscfg.mosi_io_num = 23;
+    buscfg.miso_io_num = -1;
+    buscfg.quadwp_io_num = -1;
+    buscfg.quadhd_io_num = -1;
+    buscfg.max_transfer_sz = lcd_transfer_buffer_size + 8;
+
+    // Initialize the SPI bus on VSPI (SPI3)
+    spi_bus_initialize(SPI3_HOST, &buscfg, SPI_DMA_CH_AUTO);
+
+    esp_lcd_panel_io_handle_t io_handle = NULL;
+    esp_lcd_panel_io_spi_config_t io_config;
+    memset(&io_config, 0, sizeof(io_config));
+    io_config.dc_gpio_num = 15,
+    io_config.cs_gpio_num = 5,
+    io_config.pclk_hz = 40*1000*1000,
+    io_config.lcd_cmd_bits = 8,
+    io_config.lcd_param_bits = 8,
+    io_config.spi_mode = 0,
+    io_config.trans_queue_depth = 10,
+    io_config.on_color_trans_done = display_flush_ready;
+    // Attach the LCD to the SPI bus
+    esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)SPI3_HOST, &io_config, &io_handle);
+
+    lcd_handle = NULL;
+    esp_lcd_panel_dev_config_t panel_config;
+    memset(&panel_config, 0, sizeof(panel_config));
+    panel_config.reset_gpio_num = -1;
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+    panel_config.rgb_endian = LCD_RGB_ENDIAN_BGR;
+#else
+    panel_config.color_space = ESP_LCD_COLOR_SPACE_BGR;
+#endif
+    panel_config.bits_per_pixel = 16;
+
+    // Initialize the LCD configuration
+    esp_lcd_new_panel_ili9342(io_handle, &panel_config, &lcd_handle);
+
+    // Reset the display
+    esp_lcd_panel_reset(lcd_handle);
+
+    // Initialize LCD panel
+    esp_lcd_panel_init(lcd_handle);
+    // esp_lcd_panel_io_tx_param(io_handle, LCD_CMD_SLPOUT, NULL, 0);
+    //  Swap x and y axis (Different LCD screens may need different options)
+    esp_lcd_panel_swap_xy(lcd_handle, false);
+    esp_lcd_panel_set_gap(lcd_handle, 0, 0);
+    esp_lcd_panel_mirror(lcd_handle, false, false);
+    esp_lcd_panel_invert_color(lcd_handle, true);
+    // Turn on the screen
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+    esp_lcd_panel_disp_on_off(lcd_handle, true);
+#else
+    esp_lcd_panel_disp_off(lcd_handle, true);
+#endif
+    lcd.buffer_size(lcd_transfer_buffer_size);
+    lcd.buffer1(lcd_transfer_buffer1);
+    lcd.buffer2(lcd_transfer_buffer2);
+    lcd.on_flush_callback(display_on_flush);
+}
 // serial incoming
 static char rx_buffer[1024];
 // reads from Serial1/UART_NUM_1
@@ -98,13 +198,13 @@ static void button_b_on_press() {
     switch (current_screen)
     {
     case 1:
-        panel_set_active_screen(stat_screen);
+        lcd.active_screen(&stat_screen);
         break;
     default: // 0
         if(is_big_speed) {
-            panel_set_active_screen(big_screen);
+            lcd.active_screen(&big_screen);
         } else {
-            panel_set_active_screen(speed_screen);
+            lcd.active_screen(&speed_screen);
         }
         break;
     }
@@ -125,7 +225,7 @@ void setup() {
     printf("Arduino version: %d.%d.%d\n",ESP_ARDUINO_VERSION_MAJOR,ESP_ARDUINO_VERSION_MINOR,ESP_ARDUINO_VERSION_PATCH);
     Serial1.begin(9600,SERIAL_8N1,32,33);
     power.initialize(); // do this first
-    panel_init(); // do this next
+    display_init(); // do this next
     touch.initialize();
     time_rtc.initialize();
     lwgps_init(&gps);
@@ -142,7 +242,7 @@ void setup() {
 #ifdef MILES
     toggle_units();
 #endif
-    panel_set_active_screen(speed_screen);   
+    lcd.active_screen(&speed_screen);   
 }
 
 void loop()
@@ -279,7 +379,7 @@ void loop()
         stat_battery_canvas.invalidate();
         ac_in = ui_ac_in;
     }
-    panel_update();
+    lcd.update();
     
     // process "buttons"
     touch.update();  
@@ -316,10 +416,10 @@ void loop()
                 if(current_screen==0) {
                     puts("touched");
                     if(!is_big_speed) {
-                        panel_set_active_screen(big_screen);
+                        lcd.active_screen(&big_screen);
                         is_big_speed = true;
                     } else {
-                        panel_set_active_screen(speed_screen);
+                        lcd.active_screen(&speed_screen);
                         is_big_speed = false;
                     }
                 }
