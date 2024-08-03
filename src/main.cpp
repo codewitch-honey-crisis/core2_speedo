@@ -414,7 +414,6 @@ void loop()
                 break;
             case 3:
                 if(current_screen==0) {
-                    puts("touched");
                     if(!is_big_speed) {
                         lcd.active_screen(&big_screen);
                         is_big_speed = true;
