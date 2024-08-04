@@ -10,10 +10,11 @@
 #include <m5core2_power.hpp> // AXP192 power management (core2)
 #include <bm8563.hpp> // real-time clock
 #include <ft6336.hpp> // touch
+#include <button.hpp> // button
 #include <uix.hpp> // user interface library
 #include <gfx.hpp> // graphics library
 #include "ui.hpp" // ui declarations
-#include "lwgps.h"
+#include "lwgps.h" // gps decoder 
 // namespace imports
 using namespace arduino; // libs (arduino)
 using namespace gfx; // graphics
@@ -28,6 +29,136 @@ static bm8563 time_rtc(esp_i2c<1,21,22>::instance);
 
 // for touch
 ft6336<320,280,32> touch(esp_i2c<1,21,22>::instance);
+
+class core2_button final : public button {
+    int m_index;
+    bool m_initialized;
+    bool m_pressed;
+    button_on_pressed_changed m_callback;
+    void* m_callback_state;
+public:
+    core2_button(int index = 0) : m_index(index),m_initialized(false), m_pressed(false),m_callback(nullptr) {
+
+    }
+    virtual bool initialized() const override {
+        return m_initialized;
+    }
+    virtual void initialize() override {
+        touch.initialize();
+        m_initialized = true;
+    }
+    virtual void deinitialize() override {
+        m_initialized = false;
+    }
+    virtual bool pressed() override {
+        return m_pressed;
+    }
+    virtual void update() override {
+        touch.update();
+        uint16_t x,y;
+        if(touch.xy(&x,&y)) {
+            if(y>=240) {
+                switch(m_index) {
+                    case 1:
+                        if(x>106 && x<=329-106) {
+                            if(!m_pressed) {
+                                m_pressed = true;
+                                if(m_callback) {
+                                    m_callback(true,m_callback_state);
+                                }
+                            }
+                            return;
+                        } else {
+                            if(m_pressed) {
+                                m_pressed = false;
+                                if(m_callback) {
+                                    m_callback(false,m_callback_state);
+                                }
+                            }
+                        }
+                    case 2:
+                        if(x>329-106) {
+                            if(!m_pressed) {
+                                m_pressed = true;
+                                if(m_callback) {
+                                    m_callback(true,m_callback_state);
+                                }
+                            }
+                        } else {
+                            if(m_pressed) {
+                                m_pressed = false;
+                                if(m_callback) {
+                                    m_callback(false,m_callback_state);
+                                }
+                            }
+                        }
+                        return;
+                    case 3:
+                        if(m_pressed) {
+                            m_pressed = false;
+                            if(m_callback) {
+                                m_callback(false,m_callback_state);
+                            }
+                        }
+                        break;
+                    default:
+                        if(x<107) {
+                            if(!m_pressed) {
+                                m_pressed = true;
+                                if(m_callback) {
+                                    m_callback(true,m_callback_state);
+                                }
+                            }
+                        } else {
+                            if(m_pressed) {
+                                m_pressed = false;
+                                if(m_callback) {
+                                    m_callback(false,m_callback_state);
+                                }
+                            }
+                        }
+                        return;
+                }
+            } else if(m_index==3) {
+                if(!m_pressed) {
+                    m_pressed = true;
+                    if(m_callback) {
+                        m_callback(true,m_callback_state);
+                    }
+                }
+                return;
+            } else {
+                if(m_pressed) {
+                    m_pressed = false;
+                    if(m_callback) {
+                        m_callback(false,m_callback_state);
+                    }
+                }
+            }
+        } else {
+            if(m_pressed) {
+                m_pressed = false;
+                if(m_callback) {
+                    m_callback(false,m_callback_state);
+                }
+            }
+        }
+    }
+    virtual void on_pressed_changed(button_on_pressed_changed callback, void* state = nullptr) override {
+        m_callback = callback;
+        m_callback_state = state;
+    }
+};
+
+core2_button button_a_raw(0);
+core2_button button_b_raw(1);
+core2_button button_c_raw(2);
+core2_button button_d_raw(3);
+
+multi_button button_a(button_a_raw);
+multi_button button_b(button_b_raw);
+multi_button button_c(button_c_raw);
+multi_button button_d(button_d_raw);
 
 // use two 32KB buffers (DMA)
 constexpr const size_t lcd_transfer_buffer_size = 32*1024;
@@ -188,12 +319,16 @@ static void update_timer(time_t time) {
     int hrs = (time / (60 * 60)) % 100;
     snprintf(timer_buffer,sizeof(timer_buffer),"%02d:%02d:%02d",hrs,mns,scs);
 }
-static void button_a_on_press() {
-    toggle_units();
+static void button_a_on_click(int clicks, void* state) {
+    if(clicks&1) {
+        toggle_units();
+    }
 }
-static void button_b_on_press() {
-    if(++current_screen>1) {
-        current_screen = 0;
+static void button_b_on_click(int clicks,void* state) {
+    while(clicks--) {
+        if(current_screen++>1) {
+            current_screen = 0;
+        }
     }
     switch (current_screen)
     {
@@ -208,9 +343,8 @@ static void button_b_on_press() {
         }
         break;
     }
-    
 }
-static void button_c_on_press() {
+static void button_c_on_click(int clicks, void* state) {
     trip_counter_miles = 0;
     trip_counter_kilos = 0;
     timer_counter = 0;
@@ -218,7 +352,19 @@ static void button_c_on_press() {
     trip_label.text(trip_buffer);
     update_timer(0);
     timer_label.text(timer_buffer);
-
+}
+static void button_d_on_click(int clicks, void* state) {
+    if(clicks&1) {
+        if(current_screen==0) {
+            if(!is_big_speed) {
+                lcd.active_screen(&big_screen);
+                is_big_speed = true;
+            } else {
+                lcd.active_screen(&speed_screen);
+                is_big_speed = false;
+            }
+        }
+    }
 }
 void setup() {
     Serial.begin(115200);
@@ -227,6 +373,15 @@ void setup() {
     power.initialize(); // do this first
     display_init(); // do this next
     touch.initialize();
+    button_a.initialize();
+    button_a.on_click(button_a_on_click);
+    button_b.initialize();
+    button_b.on_click(button_b_on_click);
+    button_c.initialize();
+    button_c.on_click(button_c_on_click);
+    button_d.initialize();
+    button_d.on_click(button_d_on_click);
+    
     time_rtc.initialize();
     lwgps_init(&gps);
     ui_init();
@@ -383,7 +538,11 @@ void loop()
     
     // process "buttons"
     touch.update();  
-    uint16_t tx,ty;
+    button_a.update();
+    button_b.update();
+    button_c.update();
+    button_d.update();
+    /*uint16_t tx,ty;
     static int old_button=-1;
     int button = -1;
     if(touch.xy(&tx,&ty)) {
@@ -430,5 +589,5 @@ void loop()
         button = -1;
     }
     old_button = button;
-
+    */
 }
