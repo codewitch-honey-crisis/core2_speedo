@@ -248,7 +248,7 @@ void display_init() {
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
     esp_lcd_panel_disp_on_off(lcd_handle, true);
 #else
-    esp_lcd_panel_disp_off(lcd_handle, true);
+    esp_lcd_panel_disp_off(lcd_handle, false);
 #endif
     lcd.buffer_size(lcd_transfer_buffer_size);
     lcd.buffer1(lcd_transfer_buffer1);
@@ -333,13 +333,13 @@ static void button_b_on_click(int clicks,void* state) {
     switch (current_screen)
     {
     case 1:
-        lcd.active_screen(&stat_screen);
+        lcd.active_screen(stat_screen);
         break;
     default: // 0
         if(is_big_speed) {
-            lcd.active_screen(&big_screen);
+            lcd.active_screen(big_screen);
         } else {
-            lcd.active_screen(&speed_screen);
+            lcd.active_screen(speed_screen);
         }
         break;
     }
@@ -357,10 +357,10 @@ static void button_d_on_click(int clicks, void* state) {
     if(clicks&1) {
         if(current_screen==0) {
             if(!is_big_speed) {
-                lcd.active_screen(&big_screen);
+                lcd.active_screen(big_screen);
                 is_big_speed = true;
             } else {
-                lcd.active_screen(&speed_screen);
+                lcd.active_screen(speed_screen);
                 is_big_speed = false;
             }
         }
@@ -397,7 +397,7 @@ void setup() {
 #ifdef MILES
     toggle_units();
 #endif
-    lcd.active_screen(&speed_screen);   
+    lcd.active_screen(speed_screen);   
 }
 
 void loop()
@@ -521,17 +521,17 @@ void loop()
     static int bat_level = -1;
     if((int)power.battery_level()!=bat_level) {
         ui_battery_level = power.battery_level();
-        speed_battery_canvas.invalidate();
-        big_battery_canvas.invalidate();
-        stat_battery_canvas.invalidate();
+        speed_battery_painter.invalidate();
+        big_battery_painter.invalidate();
+        stat_battery_painter.invalidate();
         bat_level = ui_battery_level;
     }
     static int ac_in = -1;
     if(power.ac_in()!=ac_in) {
         ui_ac_in = power.ac_in();
-        speed_battery_canvas.invalidate();
-        big_battery_canvas.invalidate();
-        stat_battery_canvas.invalidate();
+        speed_battery_painter.invalidate();
+        big_battery_painter.invalidate();
+        stat_battery_painter.invalidate();
         ac_in = ui_ac_in;
     }
     lcd.update();
