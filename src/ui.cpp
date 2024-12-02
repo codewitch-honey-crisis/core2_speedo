@@ -80,7 +80,7 @@ void ui_init() {
     speed_screen.register_control(speed_needle);
     const int16_t speed_height = speed_needle.bounds().x1-2;
     text_info ti;
-    ttf_text_font_speed = tt_font(text_font_stream,speed_height,font_size_units::px);
+    ttf_text_font_speed = tt_font(text_font_stream,speed_height,font_size_units::px,true);
     ti.text_font = &ttf_text_font_speed;
     ti.text_sz("888");
     size16 speedsz;
@@ -90,7 +90,6 @@ void ui_init() {
     speed_rect.center_horizontal_inplace(speed_screen.bounds());
     speed_rect.offset_inplace(20,0);
     speed_label.bounds(speed_rect);
-    ttf_text_font_speed = tt_font(text_font_stream,speed_height,font_size_units::px,true);
     speed_label.text_justify(uix_justify::top_right);
     speed_label.font(ttf_text_font_speed);
     speed_label.padding({5,0});
